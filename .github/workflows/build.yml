@@ -1,0 +1,32 @@
+name: build
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: actions/setup-haskell@v1
+  
+    - run: |
+        Invoke-WebRequest -OutFile ghc-9.0.0.20200925-x86_64-unknown-mingw32.tar.xz https://downloads.haskell.org/ghc/9.0.1-alpha1/ghc-9.0.0.20200925-x86_64-unknown-mingw32.tar.xz
+        7z x ghc-9.0.0.20200925-x86_64-unknown-mingw32.tar.xz
+        7z x ghc-9.0.0.20200925-x86_64-unknown-mingw32.tar
+
+    - uses: actions/cache@v1
+      env:
+        cache-name: cache-cabal
+      with:
+        path: ~/.cabal
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    - run: cabal build --with-ghc=ghc-9.0.0.20200925-x86_64-unknown-mingw32/bin/ghc
